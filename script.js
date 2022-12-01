@@ -4,7 +4,7 @@ document.getElementById("student").innerHTML = student;
 
 
 //Кол-во недель обучения всего (по полугодиям)
-const total_work_weeks = [17, 23]; 
+const total_work_weeks = [17, 24]; 
 
 
 // Информация о кол-ве занятий по дням недели (по полугодиям)

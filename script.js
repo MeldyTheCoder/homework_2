@@ -64,6 +64,7 @@ function count_money(lessons, semesters, total_work_weeks, lunch_increase, ride_
 
       // Цикл по урокам
       for (let lesson = 0; lesson < lessons_list.length; ++lesson) {
+        days_count = days_count + 1;
         lesson_count = lessons_list[lesson];
         
         // Пропуск итерации, если пар больше 3 или их вообще нет
@@ -77,30 +78,31 @@ function count_money(lessons, semesters, total_work_weeks, lunch_increase, ride_
           return output_dict
         }
         
-
+        // Добавить дневную сумму денег к общей
         money_increase = money_increase + lunch_increase + ride_difference
 
-        days_count = days_count + 1;
       }
     }
 
     lessons_list = lessons[semester].exams;
     // Цикл по сессиям 
     for (let lesson = 0; lesson < lessons_list.length; ++lesson) {
+      days_count = days_count + 1
       lesson_count = lessons_list[lesson];
 
+      // Проверка дня по условию
       if ((lesson_count > 3) || (lesson_count <= 0)) {
         continue
       }
-
+      
+      // Проверка на наличие денег на приставку
       if (console_coast <= money_increase) {
         output_dict = {semester: semester, days: days_count, money: money_increase, week: total_work_weeks[semester]}
         return output_dict
       }
 
+      // Добавить дневную сумму денег к общей
       money_increase = money_increase + lunch_increase + ride_difference;
-
-      days_count = days_count + 1
     }
   
   // Учет каникул 

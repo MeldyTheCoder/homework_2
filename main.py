@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 # недели по семестрам
 total_work_weeks = [17, 24]
 
@@ -32,6 +33,60 @@ class MoneyData(object):
             return self.data[name]
         return None
 
+# функция input() с расширенными параметрами
+class ModernInput(object):
+    def __init__(self, text: str, integer: bool = False, range_input: tuple[int] = (), *args, **kwargs):
+        self.text = text
+        self.current_text = self.text
+        self.is_integer = integer
+        self.range_input = range_input
+        self.type = int if (self.is_integer) else str
+        self.max_value = 999999
+        self.value = None
+        self.__format_range()
+
+    def __sub__(self, other):
+        pass
+
+    # вывод значения сразу после инициализации класса
+    def __new__(cls, *args, **kwargs):
+        obj = super(ModernInput, cls).__new__(cls)
+        obj.__init__(*args, **kwargs)
+        return obj.__show()
+
+    def __int__(self):
+        try:
+            return int(self.value)
+        except:
+            return 0
+
+    def __str__(self):
+        return str(self.value)
+
+    def __format_range(self):
+        self.range_input = self.range_input[0:2]
+        try:
+            if self.range_input and self.range_input[1] == 0:
+                self.range_input = (self.range_input[0], self.max_value)
+        except:
+            pass
+
+    def __value_in_range(self, value: int):
+        if self.is_integer and self.range_input:
+            return value in iter(range(*self.range_input))
+        return True
+
+    def __show(self):
+        try:
+            data = self.type(input(self.current_text))
+            if not self.__value_in_range(data):
+                self.current_text = 'Значение выходит за рамки! ' + self.text
+                return self.__show()
+            self.value = data
+            return data
+        except:
+            self.current_text = 'Данные введены некорректно! ' + self.text
+            return self.__show()
 
 class MoneyCounter:
     # инициализация класса
@@ -44,9 +99,10 @@ class MoneyCounter:
         self.increase = increase
         self.lessons_range = lesson_range
         self.semesters = len(self.lessons)
-
         self.__money = 0
         self.__days = 0
+        self.weekdays_codes = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        self.weekdays = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье']
 
     # функция для изменения кортежей
     def __edit_tuple(self, tuple_obj: tuple[int], pos: int, val: int):
@@ -62,6 +118,20 @@ class MoneyCounter:
     # вывод кол-ва дней каникул по семестрам
     def get_holidays(self, semester: int = 0):
         return self.holidays[semester]
+
+    # вывод сокращенного названия дня недели
+    def get_weekday_string(self, day: int):
+        try:
+            return self.weekdays_codes[day]
+        except:
+            return '??'
+
+    # вывод полного названия дня недели
+    def get_weekday_name(self, day: int):
+        try:
+            return self.weekdays[day]
+        except:
+            return '??'
 
     # добавить каникулы по семестрам к общему кол-ву дней
     def add_holidays(self, semester: int):
@@ -105,6 +175,29 @@ class MoneyCounter:
     def add_to_money(self):
         self.__money += self.increase + self.ride_differance
 
+    # добавление финансов к общей сумме (только проезд)
+    def add_from_ride(self):
+        self.__money += self.ride_differance
+
+    # вывод изменений в подсчетах
+    def log(self, lesson: int, week: int, semester: int, is_exam: bool = False):
+        return print(f'Day {self.days}: {self.money} RUB | {"EXAM" if is_exam else "LESSON"} | WEEKDAY {self.get_weekday_string(lesson)} | WEEK {week+1} | SEMESTER {semester+1}')
+
+
+    # проверить, является ли день выходным
+    def is_weekend(self, day_index: int, semester: int, exam: bool = False):
+        try:
+            if exam:
+                lessons = self.get_exams_list(semester)
+
+            else:
+                lessons = self.get_lessons_list(semester)
+
+            return lessons[day_index] <= 0
+        except Exception as e:
+            print(f'Ошибка проверка дня на выходной: {str(e)}')
+            return False
+
     # вывод общего кол-ва недель обучения
     @property
     def week_sum(self):
@@ -131,26 +224,40 @@ class MoneyCounter:
         for semester in range(self.semesters):
             for week in range(self.lesson_weeks(semester)):
                 for index, lesson in enumerate(self.get_lessons_list(semester)):
-                    self.add_day()
-                    if not self.__check_lessons(lesson):
-                        continue
-
                     if self.goal_complete:
                         return MoneyData(money=self.money, days=self.days, week=week, is_exam=False, lesson=index, complete=True,
                                          semester=semester)
 
+                    if not self.__check_lessons(lesson):
+                        if not self.is_weekend(index, semester, False):
+                            self.add_from_ride()
+                        self.add_day()
+                        continue
+
+
                     self.add_to_money()
+                    self.add_day()
+
+                    self.log(index, week, semester)
+
 
             for index, exam in enumerate(self.get_exams_list(semester)):
-                self.add_day()
-                if not self.__check_lessons(exam):
-                    continue
-
                 if self.goal_complete:
                     return MoneyData(money=self.money, days=self.days, week=total_work_weeks[semester], is_exam=True,
                                      lesson=index, complete=True, semester=semester)
 
+
+
+                if not self.__check_lessons(exam):
+                    if not self.is_weekend(index, semester, True):
+                        self.add_from_ride()
+                    self.add_day()
+                    continue
+
                 self.add_to_money()
+                self.add_day()
+
+                self.log(index, self.total_work_weeks[semester], semester, True)
 
             self.add_holidays(semester)
 
@@ -160,15 +267,11 @@ class MoneyCounter:
 
 
 # Ввод данных
-ride_coast = int(input('Стоимость проезда: '))
-console_coast = int(input('Стоимость приставки: '))
+ride_coast = ModernInput('Стоимость проезда: ', True)
+console_coast = ModernInput('Стоимость приставки: ', True)
 
-ride_increase = int(input(f'Сумма денег, которую дает мама на проезд (мин. {ride_coast}): '))
-lunch_increase = int(input('Сумма денег, которую дает мама на обед: '))
-
-# Просить пользователя ввести сумму за проезд от мамы, пока эта сумма не соответствует условиям
-while ride_coast > ride_increase:
-    ride_increase = int(input(f'Введите корректную сумму денег, которую дает мама на проезд (мин. {ride_coast}): '))
+ride_increase = ModernInput(f'Сумма денег, которую дает мама на проезд (мин. {ride_coast}): ', True, range_input=(ride_coast, 0))
+lunch_increase = ModernInput('Сумма денег, которую дает мама на обед: ', True)
 
 # Разница между прибавкой за проезд от мамы и стоимостью проезда
 ride_differance = ride_increase - ride_coast
@@ -178,7 +281,7 @@ money_counter = MoneyCounter(lessons, ride_differance, console_coast, lunch_incr
 money = money_counter.predict()
 
 if money.complete:
-    print(f'Вы успешно накопили на свою цель за {money.days} дней! Это {money.lesson+1}-ый день {money.week+1}-ой недели {money.semester+1}-ого семестра во время {"обычных занятий" if not money.is_exam else "экзаменов"}! ')
+    print(f'Вы успешно накопили на свою цель за {money.days} дней! Это {money_counter.get_weekday_name(money.lesson).lower()} {money.week+1}-ой недели {money.semester+1}-ого семестра во время {"обычных занятий" if not money.is_exam else "экзаменов"}! ')
 else:
     print(f'Увы, но накопить не удалось( Но за все время было накоплено {money.money} RUB!')
 

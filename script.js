@@ -25,11 +25,11 @@ let semesters = lessons.length;
 
 
 // Ввод данных для подсчета
-ride_coast = +prompt('Стоимость проезда: ', 30);
-console_coast = +prompt('Стоимость приставки: ', 20000);
+let ride_coast = +prompt('Стоимость проезда: ', 30);
+let console_coast = +prompt('Стоимость приставки: ', 20000);
 
-ride_increase = +prompt('Сумма денег, которую дает мама на проезд (мин. ' + ride_coast + '): ', 50);
-lunch_increase = +prompt('Сумма денег, которую дает мама на обед: ', 200);
+let ride_increase = +prompt('Сумма денег, которую дает мама на проезд (мин. ' + ride_coast + '): ', 50);
+let lunch_increase = +prompt('Сумма денег, которую дает мама на обед: ', 200);
 
 // Просить пользователя ввести новую сумму за проезд от мамы, пока она меньше стоимости проезда
 while (ride_coast > ride_increase) {
@@ -131,7 +131,7 @@ function count_money(lessons, semesters, total_work_weeks, lunch_increase, ride_
 
 }
 
-money_data = count_money(lessons, semesters, total_work_weeks, lunch_increase, ride_difference)
+let money_data = count_money(lessons, semesters, total_work_weeks, lunch_increase, ride_difference)
 
 if (money_data.money >= console_coast) {
   alert('На приставку накопить удалось за ' + Number(money_data.days) + ' дней! Это ' + (Number(money_data.week)+1) + "-ая неделя " + (Number(money_data.semester)+1) + "-ого семестра");
